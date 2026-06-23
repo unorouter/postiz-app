@@ -88,6 +88,23 @@ services:
     volumes:
       - postiz_pg_data:/var/lib/postgresql/data
 
+  unorouter-postiz-temporal-elasticsearch:
+    image: elasticsearch:7.17.27
+    container_name: unorouter-postiz-temporal-elasticsearch
+    restart: always
+    networks:
+      - internal
+    environment:
+      - cluster.routing.allocation.disk.threshold_enabled=true
+      - cluster.routing.allocation.disk.watermark.low=512mb
+      - cluster.routing.allocation.disk.watermark.high=256mb
+      - cluster.routing.allocation.disk.watermark.flood_stage=128mb
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - xpack.security.enabled=false
+    volumes:
+      - postiz_temporal_es_data:/usr/share/elasticsearch/data
+
   unorouter-postiz-temporal:
     image: temporalio/auto-setup:1.28.1
     container_name: unorouter-postiz-temporal
@@ -97,12 +114,17 @@ services:
     depends_on:
       unorouter-postiz-temporal-postgres:
         condition: service_healthy
+      unorouter-postiz-temporal-elasticsearch:
+        condition: service_started
     environment:
       - DB=postgres12
       - DB_PORT=5432
       - POSTGRES_USER=${TEMPORAL_POSTGRES_USER}
       - POSTGRES_PWD=${TEMPORAL_POSTGRES_PASSWORD}
       - POSTGRES_SEEDS=unorouter-postiz-temporal-postgres
+      - ENABLE_ES=true
+      - ES_SEEDS=unorouter-postiz-temporal-elasticsearch
+      - ES_VERSION=v7
       - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
       - TZ=Europe/Berlin
     volumes:
@@ -152,3 +174,4 @@ volumes:
   postiz_pg_data:
   postiz_redis_data:
   postiz_temporal_pg_data:
+  postiz_temporal_es_data:
