@@ -24,7 +24,7 @@ jobs:
           echo TEMPORAL_POSTGRES_PASSWORD=${{ secrets.POSTIZ_TEMPORAL_POSTGRES_PASSWORD }} >> .env
 
       - name: Docker run prod
-        run: docker compose -f docker-compose-traefik.yml up -d --force-recreate --pull always
+        run: docker compose -f docker-compose-traefik.yml up -d --force-recreate --build
 
       - name: remove unused images, containers, volumes, and networks
         run: docker image prune -a -f --filter "until=24h" && docker container prune -f --filter "until=24h" && docker volume prune -f && docker network prune -f --filter "until=24h"
